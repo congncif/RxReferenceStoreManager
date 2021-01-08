@@ -159,3 +159,7 @@ extension ReactiveDisposableObject where Self: ReactiveCompatible {
 extension NSObject: PairableObject {}
 extension NSObject: ReactiveDisposableObject {}
 extension NSObject: SelfStorableObject {}
+
+// RxSwift
+extension DisposeBag: PairableObject {}
+extension DisposeBag: SelfStorableObject {}
