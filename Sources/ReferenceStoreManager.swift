@@ -59,7 +59,7 @@ public final class ReferenceStoreManager {
         storage[key] = [object]
     }
 
-    public func storedObject<Object: AnyObject>(forKey key: AnyHashable = String(describing: Object.self)) -> Object? {
+    public func storedObject<Object>(forKey key: AnyHashable = String(describing: Object.self)) -> Object? {
         storage[key]?.compactMap { $0 as? Object }.first
     }
 
@@ -115,6 +115,43 @@ public extension SelfStorableObject {
     }
 }
 
+// MARK: - StorableObject
+
+public protocol StorableObject: AnyObject, ReactiveCompatible {
+    func storeObject<Object: AnyObject>(_ object: Object)
+    func storedObject<Object>(_ objectType: Object.Type) -> Object?
+    func removeObject(object: AnyObject)
+    func removeObject<Object: AnyObject>(_ objectType: Object.Type)
+}
+
+public extension StorableObject {
+    func storedObject<Object>() -> Object? {
+        storedObject(Object.self)
+    }
+}
+
+public extension StorableObject {
+    private var referenceStoreManager: ReferenceStoreManager { .shared }
+
+    func storeObject<Object: AnyObject>(_ object: Object) {
+        referenceStoreManager.storeObject(object, untilObjectKilled: self)
+    }
+
+    func storedObject<Object>(_ objectType: Object.Type) -> Object? {
+        referenceStoreManager.storedObjects(pairedWith: self)
+            .compactMap { $0 as? Object }
+            .first
+    }
+
+    func removeObject(object: AnyObject) {
+        referenceStoreManager.removeObject(forKey: ObjectIdentifier(object))
+    }
+
+    func removeObject<Object: AnyObject>(_ objectType: Object.Type) {
+        referenceStoreManager.removeObject(objectType)
+    }
+}
+
 // MARK: - ReactiveDisposableObject
 
 public final class DisposeContainer {
@@ -159,6 +196,7 @@ extension ReactiveDisposableObject where Self: ReactiveCompatible {
 extension NSObject: PairableObject {}
 extension NSObject: ReactiveDisposableObject {}
 extension NSObject: SelfStorableObject {}
+extension NSObject: StorableObject {}
 
 // RxSwift
 extension DisposeBag: PairableObject {}
